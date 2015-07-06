@@ -1,4 +1,4 @@
-import cmd, ssl, os
+import cmd, ssl, os, sys
 from suds.client import Client
 
 # Ignore SSL errors. Remove this when launching nukes
@@ -58,16 +58,23 @@ Type call AdminServiceName.<TAB><TAB> to see operations
             client = Client('https://{0}/services/{1}?wsdl'.format(self.host, adminService),
                 location='https://{0}/services/{1}'.format(self.host, adminService))
             client.options.transport.cookiejar = self.cookie
-            print(eval("client.service.{0}".format(serviceCall)))
+
+            try:
+                response = eval("client.service.{0}".format(serviceCall))
+                print(response)
+            except:
+                print(sys.exc_info()[0], sys.exc_info()[1])
 
     def complete_call(self, text, line, begidx, endidx):
         if text.endswith("."):
             # show all methods under the admin service
-            self.client = Client('https://{0}/services/{1}?wsdl'.format(self.host, text[:len(text)-1]),
+            self.client = Client(
+                'https://{0}/services/{1}?wsdl'.format(self.host, text[:len(text)-1]),
                 location='https://{0}/services/{1}'.format(self.host, text[:len(text)-1]))
             output = str(self.client)
             # create an array of methods from the serialized client string
-            self.methods = [ x.strip() for x in output[ output.find("Method") : output.find("Types")-1 ].split("\n")[1:] ]
+            self.methods = [ x.strip() 
+                for x in output[ output.find("Method") : output.find("Types")-1 ].split("\n")[1:] ]
             return self.methods
         elif len(text)-2 >= text.find("."):
             # starting to type a name of a method
